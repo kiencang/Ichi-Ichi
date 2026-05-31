@@ -1,0 +1,218 @@
+import { ChangeDetectionStrategy, Component, computed, signal, OnDestroy } from '@angular/core';
+
+@Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  selector: 'app-root',
+  imports: [],
+  templateUrl: './app.html',
+  styleUrl: './app.css',
+  host: {
+    '(window:keydown)': 'handleKeydown($event)'
+  }
+})
+export class App implements OnDestroy {
+  isRecording = signal(false);
+  recordingTime = signal(0);
+  errorMessage = signal('');
+  timerInterval: ReturnType<typeof setInterval> | null = null;
+
+  private mediaRecorder: MediaRecorder | null = null;
+  private recordedChunks: Blob[] = [];
+  private combinedStream: MediaStream | null = null;
+  private displayStream: MediaStream | null = null;
+  private micStream: MediaStream | null = null;
+  private audioCtx: AudioContext | null = null;
+
+  formattedTime = computed(() => {
+    const t = this.recordingTime();
+    const m = Math.floor(t / 60).toString().padStart(2, '0');
+    const s = (t % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+  });
+
+  ngOnDestroy() {
+     this.cleanupStreams();
+  }
+
+  async toggleRecording() {
+     if (this.isRecording()) {
+         this.stopRecording();
+     } else {
+         await this.startRecording();
+     }
+  }
+
+  handleKeydown(event: KeyboardEvent) {
+    if (event.code === 'Space') {
+       if (event.target instanceof HTMLButtonElement) {
+          return; 
+       }
+       event.preventDefault();
+       this.toggleRecording();
+    }
+  }
+
+  async startRecording() {
+    this.errorMessage.set('');
+    try {
+      // 1. Lấy luồng hình ảnh màn hình và âm thanh hệ thống (nếu user share)
+      this.displayStream = await navigator.mediaDevices.getDisplayMedia({
+        video: { 
+          displaySurface: 'monitor',
+          frameRate: { ideal: 30, max: 30 }
+        } as MediaTrackConstraints, 
+        audio: true
+      });
+
+      // 2. Lấy luồng mic (Tùy máy có thể không có mic, bọc try-catch nhẹ)
+      try {
+        this.micStream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+            sampleRate: 48000
+          }
+        });
+      } catch {
+        this.errorMessage.set("Không tìm thấy Microphone, sẽ chỉ ghi hình và âm thanh hệ thống (nếu có).");
+        setTimeout(() => this.errorMessage.set(''), 5000);
+      }
+
+      // 3. Tiến hành gộp (Mix) các luồng âm thanh bằng Web Audio API
+      this.audioCtx = new AudioContext();
+      const dest = this.audioCtx.createMediaStreamDestination();
+
+      let hasAudio = false;
+
+      // Đưa âm thanh hệ thống vào mixer
+      if (this.displayStream.getAudioTracks().length > 0) {
+        const displayAudioSource = this.audioCtx.createMediaStreamSource(new MediaStream([this.displayStream.getAudioTracks()[0]]));
+        displayAudioSource.connect(dest);
+        hasAudio = true;
+      }
+
+      // Đưa âm thanh micro vào mixer
+      if (this.micStream && this.micStream.getAudioTracks().length > 0) {
+        const micAudioSource = this.audioCtx.createMediaStreamSource(this.micStream);
+        micAudioSource.connect(dest);
+        hasAudio = true;
+      }
+
+      // 4. Gom Video và Audio đã Mix thành một MediaStream duy nhất
+      const tracks: MediaStreamTrack[] = [
+          ...this.displayStream.getVideoTracks()
+      ];
+      
+      // Chỉ gắn track audio nếu có ít nhất một nguồn âm thanh
+      if (hasAudio) {
+          tracks.push(...dest.stream.getAudioTracks());
+      }
+
+      this.combinedStream = new MediaStream(tracks);
+
+      // Xử lý khi user bấm Dừng chia sẻ từ thanh điều hướng của trình duyệt
+      this.displayStream.getVideoTracks()[0].onended = () => {
+          if (this.isRecording()) {
+              this.stopRecording();
+          }
+      };
+
+      // 5. Chuẩn bị MediaRecorder lưu định dạng WebM
+      this.recordedChunks = [];
+      const types = [
+        'video/webm; codecs=vp9,opus',
+        'video/webm; codecs=vp8,opus',
+        'video/webm'
+      ];
+      
+      const mimeType = types.find(type => MediaRecorder.isTypeSupported(type)) || '';
+      const options = mimeType ? { mimeType, videoBitsPerSecond: 2500000 } : { videoBitsPerSecond: 2500000 };
+      
+      this.mediaRecorder = new MediaRecorder(this.combinedStream, options);
+
+      this.mediaRecorder.ondataavailable = (e) => {
+          if (e.data.size > 0) {
+              this.recordedChunks.push(e.data);
+          }
+      };
+
+      this.mediaRecorder.onstop = () => {
+          this.saveRecording();
+          this.cleanupStreams();
+      };
+
+      // Cắt file 1 giây 1 lần để nhồi dữ liệu (an toàn hơn cho video dài)
+      this.mediaRecorder.start(1000); 
+
+      this.isRecording.set(true);
+      this.recordingTime.set(0);
+      this.timerInterval = setInterval(() => {
+          this.recordingTime.update(t => t + 1);
+      }, 1000);
+
+    } catch {
+      this.errorMessage.set("Không thể bắt đầu quay. Vui lòng cấp quyền hệ thống. (Mẹo: Nhớ tích chọn 'Chia sẻ âm thanh')");
+      setTimeout(() => this.errorMessage.set(''), 8000);
+      this.cleanupStreams();
+    }
+  }
+
+  stopRecording() {
+      if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
+          this.mediaRecorder.stop();
+      } else {
+          this.cleanupStreams();
+      }
+      this.isRecording.set(false);
+      if (this.timerInterval !== null) {
+          clearInterval(this.timerInterval);
+          this.timerInterval = null;
+      }
+  }
+
+  private saveRecording() {
+      if (this.recordedChunks.length === 0) return;
+      const blob = new Blob(this.recordedChunks, { type: 'video/webm' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      document.body.appendChild(a); 
+      a.style.display = 'none';
+      a.href = url;
+      
+      const now = new Date();
+      const fn = `ScreenRecord_${now.getFullYear()}${(now.getMonth()+1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}_${now.getHours().toString().padStart(2, '0')}${now.getMinutes().toString().padStart(2, '0')}${now.getSeconds().toString().padStart(2, '0')}.webm`;
+      
+      a.download = fn;
+      a.click();
+      
+      setTimeout(() => {
+          window.URL.revokeObjectURL(url);
+          document.body.removeChild(a);
+      }, 100);
+      this.recordedChunks = [];
+  }
+
+  private cleanupStreams() {
+      if (this.displayStream) {
+          this.displayStream.getTracks().forEach(t => t.stop());
+          this.displayStream = null;
+      }
+      if (this.micStream) {
+          this.micStream.getTracks().forEach(t => t.stop());
+          this.micStream = null;
+      }
+      if (this.audioCtx) {
+          if (this.audioCtx.state !== 'closed') {
+              this.audioCtx.close();
+          }
+          this.audioCtx = null;
+      }
+      this.combinedStream = null;
+      if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
+          this.mediaRecorder.stop();
+      }
+      this.mediaRecorder = null;
+  }
+}
+

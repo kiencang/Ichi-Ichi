@@ -1,0 +1,72 @@
+<main class="min-h-screen bg-[#0F172A] flex flex-col items-center justify-center p-4 selection:bg-red-500/30 font-sans">
+  
+  @if (errorMessage()) {
+    <div class="absolute top-8 w-full max-w-md px-4 z-50">
+      <div class="bg-red-950/80 border border-red-500/30 text-red-200 px-4 py-3 rounded-xl text-sm justify-center text-center shadow-2xl backdrop-blur-md">
+        {{ errorMessage() }}
+      </div>
+    </div>
+  }
+
+  <div class="relative flex flex-col items-center">
+    
+    <!-- Record Button -->
+    <button 
+      (click)="toggleRecording()"
+      class="group relative flex items-center justify-center w-36 h-36 rounded-full transition-all duration-300 focus:outline-none focus-visible:ring-4 focus-visible:ring-red-500/50"
+      title="{{ isRecording() ? 'Dừng quay' : 'Bắt đầu ghi hình' }}"
+    >
+      <!-- Idle outer background -->
+      <div 
+        class="absolute inset-0 rounded-full transition-all duration-500 pointer-events-none"
+        [class.bg-[#E11D48]]="!isRecording()"
+        [class.group-hover:bg-[#BE123C]]="!isRecording()"
+        [class.bg-transparent]="isRecording()"
+        [class.shadow-2xl]="!isRecording()"
+        [class.shadow-[#E11D48]/30]="!isRecording()"
+        [class.scale-100]="!isRecording()"
+        [class.group-hover:scale-105]="!isRecording()"
+      ></div>
+
+      <!-- Pulsing rings when recording -->
+      @if (isRecording()) {
+        <span class="absolute inset-0 rounded-full border-[3px] border-[#E11D48] animate-[ping_2s_cubic-bezier(0,0,0.2,1)_infinite] opacity-60"></span>
+        <span class="absolute inset-4 rounded-full border-[3px] border-[#E11D48] animate-[ping_2s_cubic-bezier(0,0,0.2,1)_1s_infinite] opacity-40"></span>
+        <span class="absolute inset-0 rounded-full border-[8px] border-[#E11D48] shadow-[0_0_24px_rgba(225,29,72,0.6)]"></span>
+      }
+
+      <!-- Inner icon shape (White Circle -> Red Square) -->
+      <div class="relative z-10 flex items-center justify-center w-full h-full pointer-events-none">
+         <div 
+           class="transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] transform shadow-sm"
+           [class.bg-white]="!isRecording()"
+           [class.w-12]="!isRecording()"
+           [class.h-12]="!isRecording()"
+           [class.rounded-full]="!isRecording()"
+           [class.bg-[#E11D48]]="isRecording()"
+           [class.w-[52px]]="isRecording()"
+           [class.h-[52px]]="isRecording()"
+           [class.rounded-xl]="isRecording()"
+           [class.scale-95]="isRecording()"
+         ></div>
+      </div>
+    </button>
+
+    <!-- Status text & Time -->
+    <div class="mt-14 text-center h-12 flex flex-col items-center justify-start">
+      @if (isRecording()) {
+        <div class="flex items-center space-x-3 text-[#FDA4AF] font-mono text-3xl tracking-wider font-light drop-shadow-[0_0_12px_rgba(225,29,72,0.5)] select-none">
+           <span class="w-2.5 h-2.5 bg-[#E11D48] rounded-full animate-pulse shadow-[0_0_8px_rgba(225,29,72,0.9)] mt-1"></span>
+           <span>{{ formattedTime() }}</span>
+        </div>
+      } @else {
+         <div class="flex flex-col items-center space-y-2 pointer-events-none select-none">
+           <p class="text-slate-400 font-medium tracking-[0.2em] text-xs uppercase px-5 py-2 rounded-full bg-slate-800/40 border border-slate-700/50 shadow-inner">
+             ẤN LÀ QUAY • DỪNG LÀ LƯU
+           </p>
+         </div>
+      }
+    </div>
+    
+  </div>
+</main>
