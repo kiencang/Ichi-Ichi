@@ -18,6 +18,7 @@ export class App implements OnDestroy, OnInit {
   errorMessage = signal('');
   showSuccessToast = signal(false);
   successMessage = signal('');
+  showGuideModal = signal(false);
   audioLevels = signal<number[]>([15, 15, 15, 15, 15, 15, 15, 15, 15, 15]);
   timerInterval: ReturnType<typeof setInterval> | null = null;
   countdownTimerInterval: ReturnType<typeof setInterval> | null = null;
