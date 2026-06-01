@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, signal, OnDestroy } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, signal, OnDestroy, OnInit } from '@angular/core';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -10,11 +10,17 @@ import { ChangeDetectionStrategy, Component, computed, signal, OnDestroy } from 
     '(window:keydown)': 'handleKeydown($event)'
   }
 })
-export class App implements OnDestroy {
+export class App implements OnDestroy, OnInit {
   isRecording = signal(false);
+  isCountingDown = signal(false);
+  countdownValue = signal(3);
   recordingTime = signal(0);
   errorMessage = signal('');
   timerInterval: ReturnType<typeof setInterval> | null = null;
+  countdownTimerInterval: ReturnType<typeof setInterval> | null = null;
+  
+  hasMicDevice = signal<boolean | null>(null);
+  micPermission = signal<string | null>(null);
 
   private mediaRecorder: MediaRecorder | null = null;
   private recordedChunks: Blob[] = [];
@@ -22,6 +28,39 @@ export class App implements OnDestroy {
   private displayStream: MediaStream | null = null;
   private micStream: MediaStream | null = null;
   private audioCtx: AudioContext | null = null;
+
+  async ngOnInit() {
+      if (typeof navigator !== 'undefined' && navigator.mediaDevices) {
+          try {
+             if (navigator.mediaDevices.addEventListener) {
+                 navigator.mediaDevices.addEventListener('devicechange', () => this.checkMicStatus());
+             }
+             await this.checkMicStatus();
+
+             if (navigator.permissions && (navigator.permissions as any).query) {
+                 try {
+                     const perm = await navigator.permissions.query({ name: 'microphone' as any });
+                     this.micPermission.set(perm.state);
+                     perm.onchange = () => this.micPermission.set(perm.state);
+                 } catch (e) {
+                     // Safari sometimes doesn't support 'microphone' in permissions API
+                 }
+             }
+          } catch (e) {
+              // Ignore securely
+          }
+      }
+  }
+
+  async checkMicStatus() {
+     try {
+         const devices = await navigator.mediaDevices.enumerateDevices();
+         const hasMic = devices.some(d => d.kind === 'audioinput');
+         this.hasMicDevice.set(hasMic);
+     } catch (e) {
+         this.hasMicDevice.set(null);
+     }
+  }
 
   formattedTime = computed(() => {
     const t = this.recordingTime();
@@ -32,10 +71,12 @@ export class App implements OnDestroy {
 
   ngOnDestroy() {
      this.cleanupStreams();
+     if (this.countdownTimerInterval) clearInterval(this.countdownTimerInterval);
+     if (this.timerInterval) clearInterval(this.timerInterval);
   }
 
   async toggleRecording() {
-     if (this.isRecording()) {
+     if (this.isRecording() || this.isCountingDown()) {
          this.stopRecording();
      } else {
          await this.startRecording();
@@ -127,7 +168,7 @@ export class App implements OnDestroy {
       ];
       
       const mimeType = types.find(type => MediaRecorder.isTypeSupported(type)) || '';
-      const options = mimeType ? { mimeType, videoBitsPerSecond: 2500000 } : { videoBitsPerSecond: 2500000 };
+      const options = mimeType ? { mimeType, videoBitsPerSecond: 5000000, audioBitsPerSecond: 192000 } : { videoBitsPerSecond: 5000000, audioBitsPerSecond: 192000 };
       
       this.mediaRecorder = new MediaRecorder(this.combinedStream, options);
 
@@ -142,13 +183,30 @@ export class App implements OnDestroy {
           this.cleanupStreams();
       };
 
-      // Cắt file 1 giây 1 lần để nhồi dữ liệu (an toàn hơn cho video dài)
-      this.mediaRecorder.start(1000); 
+      // Thay vì bắt đầu quay ngay, chúng ta đếm ngược 3 giây
+      this.isCountingDown.set(true);
+      this.countdownValue.set(3);
 
-      this.isRecording.set(true);
-      this.recordingTime.set(0);
-      this.timerInterval = setInterval(() => {
-          this.recordingTime.update(t => t + 1);
+      this.countdownTimerInterval = setInterval(() => {
+          const current = this.countdownValue();
+          if (current > 1) {
+              this.countdownValue.set(current - 1);
+          } else {
+              if (this.countdownTimerInterval !== null) {
+                  clearInterval(this.countdownTimerInterval);
+                  this.countdownTimerInterval = null;
+              }
+              this.isCountingDown.set(false);
+              
+              // Cắt file 1 giây 1 lần để nhồi dữ liệu (an toàn hơn cho video dài)
+              this.mediaRecorder!.start(1000); 
+
+              this.isRecording.set(true);
+              this.recordingTime.set(0);
+              this.timerInterval = setInterval(() => {
+                  this.recordingTime.update(t => t + 1);
+              }, 1000);
+          }
       }, 1000);
 
     } catch {
@@ -159,6 +217,16 @@ export class App implements OnDestroy {
   }
 
   stopRecording() {
+      if (this.isCountingDown()) {
+          if (this.countdownTimerInterval !== null) {
+              clearInterval(this.countdownTimerInterval);
+              this.countdownTimerInterval = null;
+          }
+          this.isCountingDown.set(false);
+          this.cleanupStreams();
+          return;
+      }
+
       if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
           this.mediaRecorder.stop();
       } else {
