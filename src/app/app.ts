@@ -9,7 +9,7 @@ import { ChangeDetectionStrategy, Component, computed, signal, OnDestroy, OnInit
   host: {
     '(window:keydown)': 'handleKeydown($event)',
     '(window:mousemove)': 'handleMouseMove($event)',
-    '(window:mouseup)': 'handleMouseUp($event)'
+    '(window:mouseup)': 'handleMouseUp()'
   }
 })
 export class App implements OnDestroy, OnInit {
@@ -59,7 +59,7 @@ export class App implements OnDestroy, OnInit {
              try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
                 stream.getTracks().forEach(t => t.stop());
-             } catch (e) {
+             } catch {
                 // Ignore if user denies or devices missing initially
              }
 
@@ -68,20 +68,19 @@ export class App implements OnDestroy, OnInit {
              }
              await this.checkMicStatus();
 
-             if (navigator.permissions && (navigator.permissions as any).query) {
+             if (navigator.permissions) {
                  try {
-                     const perm = await navigator.permissions.query({ name: 'microphone' as any });
-                     this.micPermission.set(perm.state);
-                     perm.onchange = () => this.micPermission.set(perm.state);
-                 } catch (e) {
+                     const permissionsObj = navigator.permissions as unknown as { query: (desc: { name: string }) => Promise<PermissionStatus> };
+                     if (typeof permissionsObj.query === 'function') {
+                         const perm = await permissionsObj.query({ name: 'microphone' });
+                         this.micPermission.set(perm.state);
+                         perm.onchange = () => this.micPermission.set(perm.state);
+                     }
+                 } catch {
                      // Safari sometimes doesn't support 'microphone' in permissions API
                  }
-                 try {
-                     const camPerm = await navigator.permissions.query({ name: 'camera' as any });
-                     // We can track camera permission separately if needed
-                 } catch (e) {}
              }
-          } catch (e) {
+          } catch {
               // Ignore securely
           }
       }
@@ -92,7 +91,7 @@ export class App implements OnDestroy, OnInit {
          const devices = await navigator.mediaDevices.enumerateDevices();
          const hasMic = devices.some(d => d.kind === 'audioinput');
          this.hasMicDevice.set(hasMic);
-     } catch (e) {
+     } catch {
          this.hasMicDevice.set(null);
      }
   }
@@ -146,7 +145,7 @@ export class App implements OnDestroy, OnInit {
       });
   }
 
-  handleMouseUp(event: MouseEvent) {
+  handleMouseUp() {
       this.isDraggingCam = false;
   }
 
@@ -158,7 +157,12 @@ export class App implements OnDestroy, OnInit {
       } else {
           try {
               const stream = await navigator.mediaDevices.getUserMedia({ 
-                  video: { width: 480, height: 480, facingMode: 'user' } 
+                  video: { 
+                      width: { ideal: 640 }, 
+                      height: { ideal: 480 }, 
+                      frameRate: { ideal: 60 },
+                      facingMode: 'user' 
+                  } 
               });
               this.cameraStream.set(stream);
               this.isCameraEnabled.set(true);
@@ -168,7 +172,7 @@ export class App implements OnDestroy, OnInit {
                   const videoEle = document.getElementById('camPreview') as HTMLVideoElement;
                   if (videoEle) videoEle.srcObject = stream;
               }, 50);
-          } catch (e) {
+          } catch {
               this.errorMessage.set('Không thể bật Camera. Vui lòng cấp quyền.');
               setTimeout(() => this.errorMessage.set(''), 5000);
           }
@@ -179,10 +183,11 @@ export class App implements OnDestroy, OnInit {
     this.errorMessage.set('');
     try {
       // 1. Lấy luồng hình ảnh màn hình và âm thanh hệ thống (nếu user share)
+      const idealFps = this.isCameraEnabled() ? 30 : 60;
       this.displayStream = await navigator.mediaDevices.getDisplayMedia({
         video: { 
           displaySurface: 'monitor',
-          frameRate: { ideal: 60, max: 60 }
+          frameRate: { ideal: idealFps, max: idealFps }
         } as MediaTrackConstraints, 
         audio: true
       });
@@ -306,8 +311,8 @@ export class App implements OnDestroy, OnInit {
                   this.canvasCtx.restore();
               }
           };
-          this.mixFrameId = window.setInterval(drawFrame, 1000 / 60);
-          videoTracks = this.canvasEle!.captureStream(60).getVideoTracks();
+          this.mixFrameId = window.setInterval(drawFrame, 1000 / 30);
+          videoTracks = this.canvasEle!.captureStream(30).getVideoTracks();
       }
 
       const tracks: MediaStreamTrack[] = [...videoTracks];
