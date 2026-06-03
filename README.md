@@ -1,5 +1,5 @@
 # ALQ-DLL
-Trình quay màn hình đơn giản, tiện lợi. Link ứng dụng: https://rec.wpsila.com/
+Trình quay màn hình đơn giản, tiện lợi. Link ứng dụng: https://rec.wpsila.com
 
 Một số chức năng nổi bật:
 - Thích hợp nhất để tạo video hướng dẫn ngắn hoặc mô tả trực quan điều gì đó trên máy tính của bạn để gửi ngay cho người khác, không có nhu cầu biên tập hậu kỳ phức tạp;
