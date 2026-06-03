@@ -39,6 +39,9 @@ export class App implements OnDestroy, OnInit {
   
   hasMicDevice = signal<boolean | null>(null);
   micPermission = signal<string | null>(null);
+  hasCameraDevice = signal<boolean | null>(null);
+  cameraPermission = signal<string | null>(null);
+  recordingAttempted = signal(false);
 
   private mediaRecorder: MediaRecorder | null = null;
   private recordedChunks: Blob[] = [];
@@ -64,20 +67,34 @@ export class App implements OnDestroy, OnInit {
              }
 
              if (navigator.mediaDevices.addEventListener) {
-                 navigator.mediaDevices.addEventListener('devicechange', () => this.checkMicStatus());
+                 navigator.mediaDevices.addEventListener('devicechange', () => {
+                     this.checkMicStatus();
+                     this.checkCameraStatus();
+                 });
              }
              await this.checkMicStatus();
+             await this.checkCameraStatus();
 
              if (navigator.permissions) {
                  try {
                      const permissionsObj = navigator.permissions as unknown as { query: (desc: { name: string }) => Promise<PermissionStatus> };
                      if (typeof permissionsObj.query === 'function') {
-                         const perm = await permissionsObj.query({ name: 'microphone' });
-                         this.micPermission.set(perm.state);
-                         perm.onchange = () => this.micPermission.set(perm.state);
+                         const permMic = await permissionsObj.query({ name: 'microphone' });
+                         this.micPermission.set(permMic.state);
+                         permMic.onchange = () => this.micPermission.set(permMic.state);
                      }
                  } catch {
                      // Safari sometimes doesn't support 'microphone' in permissions API
+                 }
+                 try {
+                     const permissionsObj = navigator.permissions as unknown as { query: (desc: { name: string }) => Promise<PermissionStatus> };
+                     if (typeof permissionsObj.query === 'function') {
+                         const permCam = await permissionsObj.query({ name: 'camera' });
+                         this.cameraPermission.set(permCam.state);
+                         permCam.onchange = () => this.cameraPermission.set(permCam.state);
+                     }
+                 } catch {
+                     // Safari sometimes doesn't support 'camera' in permissions API
                  }
              }
           } catch {
@@ -93,6 +110,16 @@ export class App implements OnDestroy, OnInit {
          this.hasMicDevice.set(hasMic);
      } catch {
          this.hasMicDevice.set(null);
+     }
+  }
+
+  async checkCameraStatus() {
+     try {
+         const devices = await navigator.mediaDevices.enumerateDevices();
+         const hasCamera = devices.some(d => d.kind === 'videoinput');
+         this.hasCameraDevice.set(hasCamera);
+     } catch {
+         this.hasCameraDevice.set(null);
      }
   }
 
@@ -150,6 +177,7 @@ export class App implements OnDestroy, OnInit {
   }
 
   async toggleCamera() {
+      this.recordingAttempted.set(true);
       if (this.isCameraEnabled()) {
           this.cameraStream()?.getTracks().forEach(t => t.stop());
           this.cameraStream.set(null);
@@ -166,31 +194,52 @@ export class App implements OnDestroy, OnInit {
               });
               this.cameraStream.set(stream);
               this.isCameraEnabled.set(true);
+              this.cameraPermission.set('granted');
+              this.checkCameraStatus();
               
               // Cập nhật lại srcObject sau khi view render
               setTimeout(() => {
                   const videoEle = document.getElementById('camPreview') as HTMLVideoElement;
                   if (videoEle) videoEle.srcObject = stream;
               }, 50);
-          } catch {
-              this.errorMessage.set('Không thể bật Camera. Vui lòng cấp quyền.');
-              setTimeout(() => this.errorMessage.set(''), 5000);
+          } catch (err) {
+              const errorName = (err instanceof Error) ? err.name : '';
+              if (errorName === 'NotAllowedError' || errorName === 'PermissionDeniedError') {
+                  this.cameraPermission.set('denied');
+              }
+              this.checkCameraStatus();
           }
       }
   }
 
   async startRecording() {
     this.errorMessage.set('');
+    this.recordingAttempted.set(true);
     try {
       // 1. Lấy luồng hình ảnh màn hình và âm thanh hệ thống (nếu user share)
       const idealFps = this.isCameraEnabled() ? 30 : 60;
-      this.displayStream = await navigator.mediaDevices.getDisplayMedia({
-        video: { 
-          displaySurface: 'monitor',
-          frameRate: { ideal: idealFps, max: idealFps }
-        } as MediaTrackConstraints, 
-        audio: true
-      });
+      try {
+        this.displayStream = await navigator.mediaDevices.getDisplayMedia({
+          video: { 
+            displaySurface: 'monitor',
+            frameRate: { ideal: idealFps, max: idealFps }
+          } as MediaTrackConstraints, 
+          audio: {
+            echoCancellation: false,
+            noiseSuppression: false,
+            autoGainControl: false,
+            channelCount: 2
+          } as unknown as MediaTrackConstraints
+        });
+      } catch {
+        this.displayStream = await navigator.mediaDevices.getDisplayMedia({
+          video: { 
+            displaySurface: 'monitor',
+            frameRate: { ideal: idealFps, max: idealFps }
+          } as MediaTrackConstraints, 
+          audio: true
+        });
+      }
 
       // 2. Lấy luồng mic (Tùy máy có thể không có mic, bọc try-catch nhẹ)
       try {
@@ -202,13 +251,20 @@ export class App implements OnDestroy, OnInit {
             sampleRate: 48000
           }
         });
-      } catch {
+        this.micPermission.set('granted');
+        this.checkMicStatus();
+      } catch (err) {
+        const errorName = (err instanceof Error) ? err.name : '';
+        if (errorName === 'NotAllowedError' || errorName === 'PermissionDeniedError') {
+            this.micPermission.set('denied');
+        }
+        this.checkMicStatus();
         this.errorMessage.set("Không tìm thấy Microphone, sẽ chỉ ghi hình và âm thanh hệ thống (nếu có).");
         setTimeout(() => this.errorMessage.set(''), 5000);
       }
 
       // 3. Tiến hành gộp (Mix) các luồng âm thanh bằng Web Audio API
-      this.audioCtx = new AudioContext();
+      this.audioCtx = new AudioContext({ sampleRate: 48000 });
       const dest = this.audioCtx.createMediaStreamDestination();
       this.analyserNode = this.audioCtx.createAnalyser();
       this.analyserNode.fftSize = 32;
@@ -340,7 +396,7 @@ export class App implements OnDestroy, OnInit {
       ];
       
       const mimeType = types.find(type => MediaRecorder.isTypeSupported(type)) || '';
-      const options = mimeType ? { mimeType, videoBitsPerSecond: 8000000, audioBitsPerSecond: 192000 } : { videoBitsPerSecond: 8000000, audioBitsPerSecond: 192000 };
+      const options = mimeType ? { mimeType, videoBitsPerSecond: 8000000, audioBitsPerSecond: 320000 } : { videoBitsPerSecond: 8000000, audioBitsPerSecond: 320000 };
       
       this.mediaRecorder = new MediaRecorder(this.combinedStream, options);
 
@@ -402,8 +458,13 @@ export class App implements OnDestroy, OnInit {
           }
       }, 1000);
 
-    } catch {
-      this.errorMessage.set("Không thể bắt đầu quay. Vui lòng cấp quyền hệ thống. (Mẹo: Nhớ tích chọn 'Chia sẻ âm thanh')");
+    } catch (err) {
+      const errorName = (err instanceof Error) ? err.name : '';
+      if (errorName === 'NotAllowedError') {
+        this.errorMessage.set("Không thể khởi động quay: Quyền chia sẻ màn hình bị từ chối.");
+      } else {
+        this.errorMessage.set("Không thể bắt đầu quay. Vui lòng cấp quyền hệ thống. (Mẹo: Nhớ tích chọn 'Chia sẻ âm thanh')");
+      }
       setTimeout(() => this.errorMessage.set(''), 8000);
       this.cleanupStreams();
     }

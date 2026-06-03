@@ -1,7 +1,7 @@
 <main class="min-h-screen bg-[#0F172A] flex flex-col items-center justify-center p-4 selection:bg-red-500/30 font-sans">
   
   @if (errorMessage()) {
-    <div class="absolute top-8 w-full max-w-md px-4 z-50">
+    <div class="absolute top-8 w-full max-w-2xl px-4 z-50">
       <div class="bg-red-950/80 border border-red-500/30 text-red-200 px-4 py-3 rounded-xl text-sm justify-center text-center shadow-2xl backdrop-blur-md">
         {{ errorMessage() }}
       </div>
@@ -96,11 +96,15 @@
              ẤN LÀ QUAY • DỪNG LÀ LƯU
            </p>
 
-           <div class="flex items-center space-x-3 mt-4 pointer-events-auto">
+           <div 
+              class="flex items-center space-x-3 mt-4 pointer-events-auto transition-all duration-200"
+              [class.opacity-40]="recordingAttempted() && (hasCameraDevice() === false || cameraPermission() === 'denied')"
+              [attr.title]="(recordingAttempted() && (hasCameraDevice() === false || cameraPermission() === 'denied')) ? 'Camera không khả dụng hoặc bị chặn' : null"
+            >
              <span class="text-slate-400 text-sm font-medium tracking-wide">Bật Camera</span>
              <button 
                (click)="toggleCamera()"
-               [disabled]="isRecording() || isCountingDown()"
+               [disabled]="isRecording() || isCountingDown() || (recordingAttempted() && (hasCameraDevice() === false || cameraPermission() === 'denied'))"
                class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                [class.bg-emerald-500]="isCameraEnabled()"
                [class.bg-slate-700]="!isCameraEnabled()"
@@ -113,23 +117,36 @@
              </button>
            </div>
 
-           @if (hasMicDevice() === false || micPermission() === 'denied') {
-             <div class="flex items-center space-x-1.5 text-orange-400 bg-orange-500/10 px-3 py-1.5 rounded-full mt-2 text-xs font-medium border border-orange-500/20">
+           @if (recordingAttempted()) {
+            <div class="flex flex-wrap items-center justify-center gap-2 mt-2 pointer-events-auto select-none">
+            @if (hasMicDevice() === false || micPermission() === 'denied') {
+             <div class="flex items-center space-x-1.5 text-orange-400 bg-orange-500/10 px-3 py-1.5 rounded-full text-xs font-medium border border-orange-500/20">
                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4">
                  <path fill-rule="evenodd" d="M9.401 3.003c1.155-2 4.043-2 5.197 0l7.355 12.748c1.154 2-.29 4.5-2.599 4.5H4.645c-2.309 0-3.752-2.5-2.598-4.5L9.4 3.003zM12 8.25a.75.75 0 0 1 .75.75v3.75a.75.75 0 0 1-1.5 0V9a.75.75 0 0 1 .75-.75zm0 8.25a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5z" clip-rule="evenodd" />
                </svg>
                <span>Micro không khả dụng hoặc bị chặn</span>
              </div>
            }
-         </div>
-      }
-    </div>
-    
-  </div>
-  <!-- Footer -->
+
+           @if (hasCameraDevice() === false || cameraPermission() === 'denied') {
+             <div class="flex items-center space-x-1.5 text-rose-400 bg-rose-500/10 px-3 py-1.5 rounded-full text-xs font-medium border border-rose-500/20">
+               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 text-rose-400">
+                 <path fill-rule="evenodd" d="M9.401 3.003c1.155-2 4.043-2 5.197 0l7.355 12.748c1.154 2-.29 4.5-2.599 4.5H4.645c-2.309 0-3.752-2.5-2.598-4.5L9.4 3.003zM12 8.25a.75.75 0 0 1 .75.75v3.75a.75.75 0 0 1-1.5 0V9a.75.75 0 0 1 .75-.75zm0 8.25a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5z" clip-rule="evenodd" />
+               </svg>
+               <span>Camera không khả dụng hoặc bị chặn</span>
+              </div>
+            }
+            </div>
+           }
+          </div>
+       }
+     </div>
+     
+   </div>
+   <!-- Footer -->
   <footer class="absolute bottom-6 text-center w-full">
     <p class="text-[10px] text-slate-400/90 font-light tracking-widest uppercase flex items-center justify-center gap-1.5 flex-wrap">
-      <span>v1.0.12</span>
+      <span>v1.0.13</span>
       <span>&bull;</span>
       <a href="https://github.com/kiencang/ALQ-DLL" target="_blank" rel="noopener noreferrer" class="hover:text-slate-200 transition-colors cursor-pointer">GitHub</a>
       <span>&bull;</span>
