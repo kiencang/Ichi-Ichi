@@ -33,7 +33,7 @@ export class App implements OnDestroy, OnInit {
   private displayVideoEle: HTMLVideoElement | null = null;
   private canvasEle: HTMLCanvasElement | null = null;
   private canvasCtx: CanvasRenderingContext2D | null = null;
-  private mixFrameId: number | null = null;
+  private timerWorker: Worker | null = null;
 
   isRecording = signal(false);
   isCountingDown = signal(false);
@@ -188,6 +188,19 @@ export class App implements OnDestroy, OnInit {
                       facingMode: 'user' 
                   } 
               });
+
+              // Tạo một track audio im lặng bằng Web Audio để ngăn chặn việc Chromium tối ưu hóa (throttling/suspending) video ở background sau 1 phút
+              try {
+                  const audioCtx = new AudioContext();
+                  const silenceDest = audioCtx.createMediaStreamDestination();
+                  const silentTrack = silenceDest.stream.getAudioTracks()[0];
+                  if (silentTrack) {
+                      stream.addTrack(silentTrack);
+                  }
+              } catch (e) {
+                  console.error('Không thể tự động tiêm track im lặng:', e);
+              }
+
               this.cameraStream.set(stream);
               this.isCameraEnabled.set(true);
               this.deviceDetector.cameraPermission.set('granted');
@@ -197,7 +210,11 @@ export class App implements OnDestroy, OnInit {
               // Cập nhật lại srcObject sau khi view render
               setTimeout(() => {
                   const videoEle = document.getElementById('camPreview') as HTMLVideoElement;
-                  if (videoEle) videoEle.srcObject = stream;
+                  if (videoEle) {
+                      videoEle.srcObject = stream;
+                      videoEle.muted = false; // Đảm bảo không bị tắt tiếng để tránh bị đóng băng video trong tab nền
+                      videoEle.volume = 0.001; // Sử dụng âm lượng siêu nhỏ (thực tế im lặng tuyệt đối vì track chứa silence)
+                  }
               }, 50);
           } catch (err) {
               const errorName = (err instanceof Error) ? err.name : '';
@@ -340,7 +357,46 @@ export class App implements OnDestroy, OnInit {
               });
               isDrawingFrame = false;
           };
-          this.mixFrameId = window.setInterval(drawFrame, 1000 / 30);
+
+          // Sử dụng Web Worker để đảm bảo timer luôn tick đúng 30 FPS ngay cả khi tab bị giảm hiệu năng/backgrounded
+          try {
+              const workerCode = `
+                  let timerId = null;
+                  self.onmessage = function(e) {
+                      if (e.data.action === 'start') {
+                          const interval = e.data.interval || 33.33;
+                          if (timerId) clearInterval(timerId);
+                          timerId = setInterval(() => {
+                              self.postMessage('tick');
+                           }, interval);
+                      } else if (e.data.action === 'stop') {
+                          if (timerId) clearInterval(timerId);
+                          timerId = null;
+                      }
+                  };
+              `;
+              const blob = new Blob([workerCode], { type: 'application/javascript' });
+              this.timerWorker = new Worker(URL.createObjectURL(blob));
+              this.timerWorker.onmessage = () => {
+                  drawFrame();
+              };
+              this.timerWorker.postMessage({ action: 'start', interval: 1000 / 30 });
+          } catch (err) {
+              console.error('Không thể khởi tạo timer worker, chuyển sang setInterval làm dự phòng:', err);
+              this.timerWorker = null;
+              // Dự phòng bằng setInterval nếu trình duyệt bị giới hạn Worker hoặc CSP ngăn chặn Blob URL
+              const intervalId = window.setInterval(drawFrame, 1000 / 30);
+              this.timerWorker = {
+                  postMessage(message: unknown) {
+                      console.log('Worker loop fallback:', message);
+                  },
+                  terminate() {
+                      window.clearInterval(intervalId);
+                  },
+                  onmessage: null
+              } as unknown as Worker;
+          }
+
           videoTracks = this.canvasEle!.captureStream(30).getVideoTracks();
       }
 
@@ -534,9 +590,14 @@ export class App implements OnDestroy, OnInit {
   }
 
   private cleanupStreams() {
-      if (this.mixFrameId !== null) {
-          window.clearInterval(this.mixFrameId);
-          this.mixFrameId = null;
+      if (this.timerWorker !== null) {
+          try {
+              this.timerWorker.postMessage({ action: 'stop' });
+              this.timerWorker.terminate();
+          } catch {
+              // Gracefully ignore worker termination errors
+          }
+          this.timerWorker = null;
       }
       if (this.displayVideoEle) {
           this.displayVideoEle.pause();

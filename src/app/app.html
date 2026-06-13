@@ -217,7 +217,7 @@
     <p class="text-[10px] text-slate-400/90 font-light tracking-widest uppercase flex items-center justify-center gap-1.5 flex-wrap">
       <button (click)="openSettingsModal()" class="hover:text-slate-200 transition-colors font-medium text-slate-300 underline decoration-slate-500 underline-offset-4 uppercase cursor-pointer">Cài đặt</button>
       <span>&bull;</span>
-      <span>ICHI ICHI &bull; v1.0.22</span>
+      <span>ICHI ICHI &bull; v1.0.23</span>
       <span>&bull;</span>
       <a href="https://github.com/kiencang/Ichi-Ichi" target="_blank" rel="noopener noreferrer" class="hover:text-slate-200 transition-colors cursor-pointer">GitHub</a>
       <span>&bull;</span>
@@ -256,7 +256,7 @@
        [style.height.px]="showSettingsModal() ? tempCameraSize() : cameraSize()"
        (mousedown)="handleCameraDragStart($event)"
     >
-       <video id="camPreview" autoplay playsinline muted class="w-full h-full object-cover transform scale-x-[-1] pointer-events-none"></video>
+       <video id="camPreview" autoplay playsinline class="w-full h-full object-cover transform scale-x-[-1] pointer-events-none"></video>
        @if (!isRecording() && !isCountingDown()) {
           <div class="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-white/80">
