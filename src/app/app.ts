@@ -1,9 +1,13 @@
-import { ChangeDetectionStrategy, Component, computed, signal, OnDestroy, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, signal, OnDestroy, OnInit, inject } from '@angular/core';
+import { SettingsModal } from './settings-modal';
+import { GuideModal } from './guide-modal';
+import { DeviceDetector } from './device-detector';
+import { CanvasMixer } from './canvas-mixer';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-root',
-  imports: [],
+  imports: [SettingsModal, GuideModal],
   templateUrl: './app.html',
   styleUrl: './app.css',
   host: {
@@ -14,6 +18,8 @@ import { ChangeDetectionStrategy, Component, computed, signal, OnDestroy, OnInit
   }
 })
 export class App implements OnDestroy, OnInit {
+  private deviceDetector = inject(DeviceDetector);
+
   isCameraEnabled = signal(false);
   cameraStream = signal<MediaStream | null>(null);
   cameraPos = signal({ x: 20, y: 0 });
@@ -47,11 +53,10 @@ export class App implements OnDestroy, OnInit {
   tempCameraSize = signal<number>(120);
   showSettingsModal = signal(false);
 
-  hasMicDevice = signal<boolean | null>(null);
-
-  micPermission = signal<string | null>(null);
-  hasCameraDevice = signal<boolean | null>(null);
-  cameraPermission = signal<string | null>(null);
+  hasMicDevice = this.deviceDetector.hasMicDevice;
+  micPermission = this.deviceDetector.micPermission;
+  hasCameraDevice = this.deviceDetector.hasCameraDevice;
+  cameraPermission = this.deviceDetector.cameraPermission;
   cameraError = signal<string | null>(null);
   recordingAttempted = signal(false);
 
@@ -111,71 +116,7 @@ export class App implements OnDestroy, OnInit {
           this.updateCachedWindowSize();
           this.cameraPos.set({ x: 20, y: this.cachedWindowHeight - 200 }); // default pos
       }
-      if (typeof navigator !== 'undefined' && navigator.mediaDevices) {
-          try {
-             // Request initial access to both audio and video to trigger the browser's unified permission prompt
-             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
-                stream.getTracks().forEach(t => t.stop());
-             } catch {
-                // Ignore if user denies or devices missing initially
-             }
-
-             if (navigator.mediaDevices.addEventListener) {
-                 navigator.mediaDevices.addEventListener('devicechange', () => {
-                     this.checkMicStatus();
-                     this.checkCameraStatus();
-                 });
-             }
-             await this.checkMicStatus();
-             await this.checkCameraStatus();
-
-             if (navigator.permissions) {
-                 try {
-                     const permissionsObj = navigator.permissions as unknown as { query: (desc: { name: string }) => Promise<PermissionStatus> };
-                     if (typeof permissionsObj.query === 'function') {
-                         const permMic = await permissionsObj.query({ name: 'microphone' });
-                         this.micPermission.set(permMic.state);
-                         permMic.onchange = () => this.micPermission.set(permMic.state);
-                     }
-                 } catch {
-                     // Safari sometimes doesn't support 'microphone' in permissions API
-                 }
-                 try {
-                     const permissionsObj = navigator.permissions as unknown as { query: (desc: { name: string }) => Promise<PermissionStatus> };
-                     if (typeof permissionsObj.query === 'function') {
-                         const permCam = await permissionsObj.query({ name: 'camera' });
-                         this.cameraPermission.set(permCam.state);
-                         permCam.onchange = () => this.cameraPermission.set(permCam.state);
-                     }
-                 } catch {
-                     // Safari sometimes doesn't support 'camera' in permissions API
-                 }
-             }
-          } catch {
-              // Ignore securely
-          }
-      }
-  }
-
-  async checkMicStatus() {
-     try {
-         const devices = await navigator.mediaDevices.enumerateDevices();
-         const hasMic = devices.some(d => d.kind === 'audioinput');
-         this.hasMicDevice.set(hasMic);
-     } catch {
-         this.hasMicDevice.set(null);
-     }
-  }
-
-  async checkCameraStatus() {
-     try {
-         const devices = await navigator.mediaDevices.enumerateDevices();
-         const hasCamera = devices.some(d => d.kind === 'videoinput');
-         this.hasCameraDevice.set(hasCamera);
-     } catch {
-         this.hasCameraDevice.set(null);
-     }
+      await this.deviceDetector.initPermissions();
   }
 
   formattedTime = computed(() => {
@@ -249,9 +190,9 @@ export class App implements OnDestroy, OnInit {
               });
               this.cameraStream.set(stream);
               this.isCameraEnabled.set(true);
-              this.cameraPermission.set('granted');
+              this.deviceDetector.cameraPermission.set('granted');
               this.cameraError.set(null);
-              this.checkCameraStatus();
+              this.deviceDetector.checkCameraStatus();
               
               // Cập nhật lại srcObject sau khi view render
               setTimeout(() => {
@@ -261,10 +202,10 @@ export class App implements OnDestroy, OnInit {
           } catch (err) {
               const errorName = (err instanceof Error) ? err.name : '';
               if (errorName === 'NotAllowedError' || errorName === 'PermissionDeniedError') {
-                  this.cameraPermission.set('denied');
+                  this.deviceDetector.cameraPermission.set('denied');
               }
               this.cameraError.set('Camera không khả dụng hoặc bị chặn');
-              this.checkCameraStatus();
+              this.deviceDetector.checkCameraStatus();
           }
       }
   }
@@ -308,14 +249,14 @@ export class App implements OnDestroy, OnInit {
             sampleRate: 48000
           }
         });
-        this.micPermission.set('granted');
-        this.checkMicStatus();
+        this.deviceDetector.micPermission.set('granted');
+        this.deviceDetector.checkMicStatus();
       } catch (err) {
         const errorName = (err instanceof Error) ? err.name : '';
         if (errorName === 'NotAllowedError' || errorName === 'PermissionDeniedError') {
-            this.micPermission.set('denied');
+            this.deviceDetector.micPermission.set('denied');
         }
-        this.checkMicStatus();
+        this.deviceDetector.checkMicStatus();
         this.errorMessage.set("Không tìm thấy Microphone, sẽ chỉ ghi hình và âm thanh hệ thống (nếu có).");
         setTimeout(() => this.errorMessage.set(''), 5000);
       }
@@ -389,70 +330,15 @@ export class App implements OnDestroy, OnInit {
               if (!this.canvasCtx || !this.displayVideoEle || !this.canvasEle) return;
               
               isDrawingFrame = true;
-              try {
-                  // Render the display background
-                  this.canvasCtx.drawImage(this.displayVideoEle, 0, 0, this.canvasEle.width, this.canvasEle.height);
-                  
-                  const camVideoEl = document.getElementById('camPreview') as HTMLVideoElement;
-                  if (this.isCameraEnabled() && camVideoEl && camVideoEl.readyState >= 2) {
-                      // Bypassing Layout thrashing/reflow queries
-                      const windowW = this.cachedWindowWidth || 1920;
-                      const windowH = this.cachedWindowHeight || 1080;
-                      
-                      const relX = this.cameraPos().x / windowW;
-                      const relY = this.cameraPos().y / windowH;
-                      const scale = this.canvasEle.height / windowH;
-                      const camRadius = (this.cameraSize() / 2) * scale; 
-                      
-                      let x = relX * this.canvasEle.width;
-                      let y = relY * this.canvasEle.height;
-                      
-                      x = Math.max(camRadius, Math.min(x + camRadius, this.canvasEle.width - camRadius)) - camRadius;
-                      y = Math.max(camRadius, Math.min(y + camRadius, this.canvasEle.height - camRadius)) - camRadius;
-                      
-                      this.canvasCtx.save();
-                      this.canvasCtx.beginPath();
-                      this.canvasCtx.arc(x + camRadius, y + camRadius, camRadius, 0, Math.PI * 2);
-                      this.canvasCtx.closePath();
-                      this.canvasCtx.clip();
-                      
-                      const vW = camVideoEl.videoWidth;
-                      const vH = camVideoEl.videoHeight;
-                      const aspect = vW / vH;
-                      const targetSize = camRadius * 2;
-                      let sW = vW;
-                      let sH = vH;
-                      if (aspect > 1) { 
-                          sW = vH; 
-                      } else {
-                          sH = vW;
-                      }
-                      
-                      this.canvasCtx.translate(x + targetSize/2, y + targetSize/2);
-                      this.canvasCtx.scale(-1, 1);
-                      this.canvasCtx.translate(-(x + targetSize/2), -(y + targetSize/2));
-
-                      this.canvasCtx.drawImage(
-                          camVideoEl,
-                          (vW - sW) / 2, (vH - sH) / 2, sW, sH,
-                          x, y, targetSize, targetSize
-                      );
-                      
-                      this.canvasCtx.restore();
-                      
-                      this.canvasCtx.save();
-                      this.canvasCtx.beginPath();
-                      this.canvasCtx.arc(x + camRadius, y + camRadius, camRadius, 0, Math.PI * 2);
-                      this.canvasCtx.lineWidth = 2 * scale;
-                      this.canvasCtx.strokeStyle = 'rgba(16, 185, 129, 0.8)';
-                      this.canvasCtx.stroke();
-                      this.canvasCtx.restore();
-                  }
-              } catch {
-                  // Guard against crashing during recording cycles
-              } finally {
-                  isDrawingFrame = false;
-              }
+              const camVideoEl = document.getElementById('camPreview') as HTMLVideoElement;
+              CanvasMixer.drawFrame(this.canvasCtx, this.canvasEle, this.displayVideoEle, camVideoEl, {
+                  isCameraEnabled: this.isCameraEnabled(),
+                  cameraPos: this.cameraPos(),
+                  cameraSize: this.cameraSize(),
+                  windowWidth: this.cachedWindowWidth,
+                  windowHeight: this.cachedWindowHeight
+              });
+              isDrawingFrame = false;
           };
           this.mixFrameId = window.setInterval(drawFrame, 1000 / 30);
           videoTracks = this.canvasEle!.captureStream(30).getVideoTracks();
