@@ -41,8 +41,8 @@ export class App implements OnDestroy, OnInit {
   timerInterval: ReturnType<typeof setInterval> | null = null;
   countdownTimerInterval: ReturnType<typeof setInterval> | null = null;
   
-  qualityPreset = signal<'high' | 'medium' | 'low'>('high');
-  tempQualityPreset = signal<'high' | 'medium' | 'low'>('high');
+  qualityPreset = signal<'high' | 'medium' | 'low'>('medium');
+  tempQualityPreset = signal<'high' | 'medium' | 'low'>('medium');
   cameraSize = signal<number>(120);
   tempCameraSize = signal<number>(120);
   showSettingsModal = signal(false);
@@ -86,6 +86,17 @@ export class App implements OnDestroy, OnInit {
       this.cameraSize.set(this.tempCameraSize());
       this.showSettingsModal.set(false);
       this.successMessage.set('Đã lưu cài đặt thành công!');
+      this.showSuccessToast.set(true);
+      setTimeout(() => this.showSuccessToast.set(false), 5000);
+  }
+
+  resetToDefaultSettings() {
+      this.qualityPreset.set('medium');
+      this.cameraSize.set(120);
+      this.tempQualityPreset.set('medium');
+      this.tempCameraSize.set(120);
+      this.showSettingsModal.set(false);
+      this.successMessage.set('Các cài đặt đã được chuyển về mặc định');
       this.showSuccessToast.set(true);
       setTimeout(() => this.showSuccessToast.set(false), 5000);
   }
@@ -615,7 +626,13 @@ export class App implements OnDestroy, OnInit {
       a.href = url;
       
       const now = new Date();
-      const fn = `ScreenRecord_${now.getFullYear()}${(now.getMonth()+1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}_${now.getHours().toString().padStart(2, '0')}${now.getMinutes().toString().padStart(2, '0')}${now.getSeconds().toString().padStart(2, '0')}.webm`;
+      const dd = now.getDate().toString().padStart(2, '0');
+      const mm = (now.getMonth() + 1).toString().padStart(2, '0');
+      const yy = now.getFullYear().toString().slice(-2);
+      const hh = now.getHours().toString().padStart(2, '0');
+      const min = now.getMinutes().toString().padStart(2, '0');
+      const ss = now.getSeconds().toString().padStart(2, '0');
+      const fn = `[Ichi_Ichi_SR]_[${dd}_${mm}_${yy}]_[${hh}_${min}_${ss}].webm`;
       
       a.download = fn;
       a.click();

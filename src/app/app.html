@@ -215,7 +215,7 @@
    <!-- Footer -->
   <footer class="absolute bottom-6 text-center w-full">
     <p class="text-[10px] text-slate-400/90 font-light tracking-widest uppercase flex items-center justify-center gap-1.5 flex-wrap">
-      <span>ICHI ICHI &bull; v1.0.17</span>
+      <span>ICHI ICHI &bull; v1.0.18</span>
       <span>&bull;</span>
       <a href="https://github.com/kiencang/Iche-Iche" target="_blank" rel="noopener noreferrer" class="hover:text-slate-200 transition-colors cursor-pointer">GitHub</a>
       <span>&bull;</span>
@@ -332,7 +332,7 @@
 
   <!-- Settings Modal -->
   @if (showSettingsModal()) {
-    <div class="fixed inset-0 z-[110] flex items-center justify-center bg-[#070b14]/85 backdrop-blur-sm transition-all p-4">
+    <div class="fixed inset-0 z-[110] flex items-center justify-center bg-[#070b14]/01 transition-all p-4">
       <div class="bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden flex flex-col">
         <!-- Header -->
         <div class="px-6 py-4 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
@@ -358,7 +358,7 @@
                 [class.bg-slate-800/40]="tempQualityPreset() !== 'high'" [class.border-slate-700]="tempQualityPreset() !== 'high'"
                 [class.hover:border-slate-600]="tempQualityPreset() !== 'high'">
               <div>
-                <div class="font-medium text-slate-200">Cao (Mặc định)</div>
+                <div class="font-medium text-slate-200">Cao</div>
                 <div class="text-xs text-slate-400 mt-1">Video: 8 Mbps, Audio: 320 kbps</div>
               </div>
               <input type="radio" name="quality" value="high" [checked]="tempQualityPreset() === 'high'" (change)="setQualityPreset('high')" class="hidden">
@@ -374,7 +374,7 @@
                 [class.bg-slate-800/40]="tempQualityPreset() !== 'medium'" [class.border-slate-700]="tempQualityPreset() !== 'medium'"
                 [class.hover:border-slate-600]="tempQualityPreset() !== 'medium'">
               <div>
-                <div class="font-medium text-slate-200">Trung bình</div>
+                <div class="font-medium text-slate-200">Trung bình (Mặc định)</div>
                 <div class="text-xs text-slate-400 mt-1">Video: 4 Mbps, Audio: 128 kbps</div>
               </div>
               <input type="radio" name="quality" value="medium" [checked]="tempQualityPreset() === 'medium'" (change)="setQualityPreset('medium')" class="hidden">
@@ -421,9 +421,12 @@
           </div>
         </div>
         
-        <!-- Footer / Save Button -->
-        <div class="px-6 py-4 border-t border-slate-800 bg-slate-900/50">
-          <button (click)="saveSettings()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-medium py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2 cursor-pointer">
+        <!-- Footer / Action Buttons -->
+        <div class="px-6 py-4 border-t border-slate-800 bg-slate-900/50 flex gap-3">
+          <button (click)="resetToDefaultSettings()" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2 cursor-pointer border border-slate-700/50 text-sm">
+            Về mặc định
+          </button>
+          <button (click)="saveSettings()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-medium py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2 cursor-pointer text-sm">
             Lưu cài đặt
           </button>
         </div>
