@@ -3,6 +3,7 @@ import { DeviceDetector } from './device-detector';
 import { CanvasMixer } from './canvas-mixer';
 import { ToastService } from './toast.service';
 import { MESSAGES, APP_CONFIG } from './constants';
+import ysFixWebmDuration from 'fix-webm-duration';
 
 export interface RecordConfig {
   isCameraEnabled: boolean;
@@ -41,6 +42,7 @@ export class RecordingService {
   private audioCtx: AudioContext | null = null;
   private analyserNode: AnalyserNode | null = null;
   private animationFrameId: number | null = null;
+  private startTime = 0;
   
   private displayVideoEle: HTMLVideoElement | null = null;
   private canvasEle: HTMLCanvasElement | null = null;
@@ -198,7 +200,9 @@ export class RecordingService {
               this.timerWorker = null;
               const intervalId = window.setInterval(drawFrame, 1000 / idealFps);
               this.timerWorker = {
-                  postMessage() {},
+                  postMessage() {
+                      // No-op
+                  },
                   terminate() { window.clearInterval(intervalId); },
                   onmessage: null
               } as unknown as Worker;
@@ -252,7 +256,8 @@ export class RecordingService {
       };
 
       this.mediaRecorder.onstop = () => {
-          this.saveRecording();
+          const duration = Date.now() - this.startTime;
+          this.saveRecording(duration);
           this.cleanupStreams();
       };
 
@@ -272,6 +277,7 @@ export class RecordingService {
               
               const startRecordingAction = () => {
                   this.mediaRecorder!.start(1000); 
+                  this.startTime = Date.now();
   
                   this.isRecording.set(true);
                   this.isCountingDown.set(false);
@@ -357,35 +363,58 @@ export class RecordingService {
           clearInterval(this.timerInterval);
           this.timerInterval = null;
       }
+      
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+          const utterance = new SpeechSynthesisUtterance('Cut');
+          utterance.lang = 'en-US';
+          utterance.rate = 1.2;
+          window.speechSynthesis.speak(utterance);
+      }
   }
 
-  private saveRecording() {
+  private saveRecording(durationMs: number) {
       if (this.recordedChunks.length === 0) return;
       const blob = new Blob(this.recordedChunks, { type: 'video/webm' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      document.body.appendChild(a); 
-      a.style.display = 'none';
-      a.href = url;
       
-      const now = new Date();
-      const dd = now.getDate().toString().padStart(2, '0');
-      const mm = (now.getMonth() + 1).toString().padStart(2, '0');
-      const yy = now.getFullYear().toString().slice(-2);
-      const hh = now.getHours().toString().padStart(2, '0');
-      const min = now.getMinutes().toString().padStart(2, '0');
-      const ss = now.getSeconds().toString().padStart(2, '0');
-      const fn = `[Ichi_Ichi_SR]_[${dd}_${mm}_${yy}]_[${hh}_${min}_${ss}].webm`;
-      
-      a.download = fn;
-      a.click();
-      
-      setTimeout(() => {
-          window.URL.revokeObjectURL(url);
-          document.body.removeChild(a);
-          this.toastService.success(MESSAGES.SUCCESS.VIDEO_SAVED);
-      }, 100);
-      this.recordedChunks = [];
+      const downloadBlob = (blobToSave: Blob) => {
+          const url = URL.createObjectURL(blobToSave);
+          const a = document.createElement('a');
+          document.body.appendChild(a); 
+          a.style.display = 'none';
+          a.href = url;
+          
+          const now = new Date();
+          const dd = now.getDate().toString().padStart(2, '0');
+          const mm = (now.getMonth() + 1).toString().padStart(2, '0');
+          const yy = now.getFullYear().toString().slice(-2);
+          const hh = now.getHours().toString().padStart(2, '0');
+          const min = now.getMinutes().toString().padStart(2, '0');
+          const ss = now.getSeconds().toString().padStart(2, '0');
+          const fn = `[Ichi_Ichi_SR]_[${dd}_${mm}_${yy}]_[${hh}_${min}_${ss}].webm`;
+          
+          a.download = fn;
+          a.click();
+          
+          setTimeout(() => {
+              window.URL.revokeObjectURL(url);
+              document.body.removeChild(a);
+              this.toastService.success(MESSAGES.SUCCESS.VIDEO_SAVED);
+          }, 100);
+          this.recordedChunks = [];
+      };
+
+      try {
+          if (typeof ysFixWebmDuration === 'function') {
+              ysFixWebmDuration(blob, durationMs, (fixedBlob: Blob) => {
+                  downloadBlob(fixedBlob);
+              });
+          } else {
+              downloadBlob(blob);
+          }
+      } catch (err) {
+          console.error('Không thể sửa thời lượng WebM:', err);
+          downloadBlob(blob);
+      }
   }
 
   cleanupStreams() {

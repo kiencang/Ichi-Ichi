@@ -5,7 +5,7 @@ import { Component, input, output } from '@angular/core';
   standalone: true,
   template: `
     <button 
-      (click)="toggle.emit()"
+      (click)="toggleRecord.emit()"
       class="group relative flex items-center justify-center w-36 h-36 rounded-full transition-all duration-300 focus:outline-none focus-visible:ring-4 focus-visible:ring-red-500/50 cursor-pointer"
       [attr.title]="isRecording() ? 'Dừng quay' : 'Click để bắt đầu quay màn hình'"
     >
@@ -80,5 +80,5 @@ import { Component, input, output } from '@angular/core';
 })
 export class RecordButtonComponent {
   isRecording = input.required<boolean>();
-  toggle = output<void>();
+  toggleRecord = output<void>();
 }

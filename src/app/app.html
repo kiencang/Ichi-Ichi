@@ -50,7 +50,7 @@
     <app-countdown-overlay
       [countdownValue]="countdownValue()"
       [uiMode]="uiMode()"
-      (cancel)="stopRecording()"
+      (cancelRecording)="stopRecording()"
     ></app-countdown-overlay>
   }
 
@@ -59,7 +59,7 @@
     <!-- Record Button -->
     <app-record-button
       [isRecording]="isRecording()"
-      (toggle)="toggleRecording()"
+      (toggleRecord)="toggleRecording()"
     ></app-record-button>
 
     <!-- Status text & Time -->
