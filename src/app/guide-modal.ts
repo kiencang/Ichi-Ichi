@@ -37,7 +37,7 @@ import { MatIconModule } from '@angular/material/icon';
               <!-- Privacy Note -->
               <div class="p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/10 flex gap-3 items-start"
                    [class.bg-emerald-500/10]="uiMode() === 'enhanced'" [class.border-emerald-500/30]="uiMode() === 'enhanced'">
-                <mat-icon class="text-emerald-400 shrink-0 mt-0.5 !text-[20px] !w-[20px] !h-[20px]"
+                <mat-icon class="!text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.5)] shrink-0 mt-0.5 !text-[20px] !w-[20px] !h-[20px]"
                      [class.!text-[24px]]="uiMode() === 'enhanced'" [class.!w-[24px]]="uiMode() === 'enhanced'" [class.!h-[24px]]="uiMode() === 'enhanced'">verified_user</mat-icon>
                 <div class="space-y-1">
                   <h4 class="font-bold text-emerald-400 uppercase tracking-wider"
