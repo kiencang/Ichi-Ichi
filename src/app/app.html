@@ -66,7 +66,7 @@
     <button 
       (click)="toggleRecording()"
       class="group relative flex items-center justify-center w-36 h-36 rounded-full transition-all duration-300 focus:outline-none focus-visible:ring-4 focus-visible:ring-red-500/50 cursor-pointer"
-      title="{{ isRecording() ? 'Dừng quay' : 'Bắt đầu ghi hình' }}"
+      title="{{ isRecording() ? 'Dừng quay' : 'Click để bắt đầu quay màn hình' }}"
     >
       <!-- Old / Worn out Outer Background -->
       <div 
@@ -267,7 +267,7 @@
       <button (click)="openSettingsModal()" class="hover:text-slate-200 transition-colors font-medium text-slate-300 underline decoration-slate-500 underline-offset-4 uppercase cursor-pointer"
               [class.font-bold]="uiMode() === 'enhanced'">Cài đặt</button>
       <span>&bull;</span>
-      <span>ICHI ICHI &bull; v1.0.26</span>
+      <span>ICHI ICHI &bull; v1.0.27</span>
       <span>&bull;</span>
       <a href="https://github.com/kiencang/Ichi-Ichi" target="_blank" rel="noopener noreferrer" class="hover:text-slate-200 transition-colors cursor-pointer"
          [class.font-bold]="uiMode() === 'enhanced'">GitHub</a>
@@ -297,7 +297,11 @@
 
   @if (isCameraEnabled() && cameraStream()) {
     <div 
-      class="fixed z-[100] rounded-full overflow-hidden shadow-2xl border-2 bg-slate-900 flex items-center justify-center transition-shadow select-none group transition-opacity duration-300"
+      class="fixed z-[100] rounded-full overflow-hidden shadow-2xl border-2 bg-slate-900 flex items-center justify-center select-none group"
+       [class.transition-all]="!isDraggingCam()"
+       [class.duration-300]="!isDraggingCam()"
+       [class.transition-opacity]="isDraggingCam()"
+       [class.transition-shadow]="isDraggingCam()"
        [class.border-emerald-500/80]="uiMode() !== 'enhanced'"
        [class.border-amber-500]="uiMode() === 'enhanced'"
        [class.opacity-0]="isRecording()"

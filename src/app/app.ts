@@ -23,7 +23,7 @@ export class App implements OnDestroy, OnInit {
   isCameraEnabled = signal(false);
   cameraStream = signal<MediaStream | null>(null);
   cameraPos = signal({ x: 20, y: 0 });
-  isDraggingCam = false;
+  isDraggingCam = signal(false);
   dragStart = { x: 0, y: 0 };
   dragInitialPos = { x: 0, y: 0 };
 
@@ -185,14 +185,14 @@ export class App implements OnDestroy, OnInit {
 
   handleCameraDragStart(event: MouseEvent) {
       if (this.isRecording() || this.isCountingDown()) return;
-      this.isDraggingCam = true;
+      this.isDraggingCam.set(true);
       this.dragStart = { x: event.clientX, y: event.clientY };
       this.dragInitialPos = { ...this.cameraPos() };
       event.preventDefault();
   }
 
   handleMouseMove(event: MouseEvent) {
-      if (!this.isDraggingCam) return;
+      if (!this.isDraggingCam()) return;
       const dx = event.clientX - this.dragStart.x;
       const dy = event.clientY - this.dragStart.y;
       this.cameraPos.set({ 
@@ -202,7 +202,59 @@ export class App implements OnDestroy, OnInit {
   }
 
   handleMouseUp() {
-      this.isDraggingCam = false;
+      if (this.isDraggingCam()) {
+          this.isDraggingCam.set(false);
+          this.snapCameraToCorner();
+      }
+  }
+
+  snapCameraToCorner() {
+      const snapThreshold = 150; // Distance in pixels to snap to a corner
+      const camSize = this.cameraSize();
+      const currentX = this.cameraPos().x;
+      const currentY = this.cameraPos().y;
+
+      const minX = 20;
+      const maxX = this.cachedWindowWidth - camSize - 20;
+      const minY = 20;
+      const maxY = this.cachedWindowHeight - camSize - 20;
+
+      let targetX = currentX;
+      let targetY = currentY;
+
+      // Ensure camera is within bounds first
+      if (targetX < minX) targetX = minX;
+      if (targetX > maxX) targetX = maxX;
+      if (targetY < minY) targetY = minY;
+      if (targetY > maxY) targetY = maxY;
+
+      const corners = [
+          { x: minX, y: minY },
+          { x: maxX, y: minY },
+          { x: minX, y: maxY },
+          { x: maxX, y: maxY }
+      ];
+
+      let closestCorner = null;
+      let minDistance = Infinity;
+
+      for (const corner of corners) {
+          const dx = targetX - corner.x;
+          const dy = targetY - corner.y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          
+          if (distance < minDistance) {
+              minDistance = distance;
+              closestCorner = corner;
+          }
+      }
+
+      if (closestCorner && minDistance <= snapThreshold) {
+          targetX = closestCorner.x;
+          targetY = closestCorner.y;
+      }
+
+      this.cameraPos.set({ x: targetX, y: targetY });
   }
 
   async toggleCamera() {
