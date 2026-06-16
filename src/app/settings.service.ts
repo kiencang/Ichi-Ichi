@@ -77,6 +77,13 @@ export class SettingsService {
     this.tempCameraSize.set(APP_CONFIG.DEFAULTS.CAMERA_SIZE);
     this.tempUiMode.set(APP_CONFIG.DEFAULTS.UI_MODE);
     this.tempFpsPreset.set(APP_CONFIG.DEFAULTS.FPS_PRESET);
+
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(APP_CONFIG.LOCAL_STORAGE_KEYS.QUALITY_PRESET);
+      localStorage.removeItem(APP_CONFIG.LOCAL_STORAGE_KEYS.CAMERA_SIZE);
+      localStorage.removeItem(APP_CONFIG.LOCAL_STORAGE_KEYS.UI_MODE);
+      localStorage.removeItem(APP_CONFIG.LOCAL_STORAGE_KEYS.FPS_PRESET);
+    }
   }
 
   syncTempFromSettings() {
