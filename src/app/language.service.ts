@@ -46,7 +46,7 @@ export class LanguageService {
       QUALITY_HIGH: 'Cao',
       QUALITY_LOW_DESC: 'Phù hợp để lưu trữ nhanh, tiết kiệm dung lượng',
       QUALITY_MEDIUM_DESC: 'Cân bằng hoàn hảo giữa dung lượng và độ sắc nét',
-      QUALITY_HIGH_DESC: 'Khuyên dùng cho văn bản, bài giảng chi tiết',
+      QUALITY_HIGH_DESC: 'Cho chất lượng hình ảnh & âm thanh cao nhất có thể',
       BITRATE_PREFIX: 'Bitrate',
       BITRATE_LOW_DETAIL: 'Video 2 Mbps (Audio 128 Kbps)',
       BITRATE_MEDIUM_DETAIL: 'Video 4 Mbps (Audio 192 Kbps)',
@@ -88,6 +88,7 @@ export class LanguageService {
 
       // Guide Modal
       GUIDE_BEST_COMPATIBILITY: '[Dùng tốt nhất trên Windows, trình duyệt Chrome hoặc Edge]',
+      GUIDE_FOOTER_TITLE: 'Hướng dẫn dùng',
       GUIDE_PRIVACY_TITLE: 'Bảo mật & Riêng tư',
       GUIDE_PRIVACY_BODY: 'Lưu ý: Công cụ này xử lý việc ghi âm và ghi hình hoàn toàn trực tiếp trên trình duyệt máy tính của bạn. Trang web cam kết không nhận, không gửi và không lưu giữ bất kỳ hình ảnh hay âm thanh nào của người dùng lên máy chủ.',
       
@@ -141,7 +142,7 @@ export class LanguageService {
       QUALITY_HIGH: 'High',
       QUALITY_LOW_DESC: 'Suitable for quick recording, saves space',
       QUALITY_MEDIUM_DESC: 'Perfect balance between size and quality',
-      QUALITY_HIGH_DESC: 'Recommended for documents and slides',
+      QUALITY_HIGH_DESC: 'Outputs the highest possible video and audio quality',
       BITRATE_PREFIX: 'Bitrate',
       BITRATE_LOW_DETAIL: 'Video 2 Mbps (Audio 128 Kbps)',
       BITRATE_MEDIUM_DETAIL: 'Video 4 Mbps (Audio 192 Kbps)',
@@ -183,6 +184,7 @@ export class LanguageService {
 
       // Guide Modal
       GUIDE_BEST_COMPATIBILITY: '[Best working on Windows, Chrome or Edge browsers]',
+      GUIDE_FOOTER_TITLE: 'User Guide',
       GUIDE_PRIVACY_TITLE: 'Privacy & Security',
       GUIDE_PRIVACY_BODY: 'Note: This utility records and renders video and audio fully local to your browser. No personal records, assets or streams are shared or sent to any server.',
       

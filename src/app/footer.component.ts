@@ -5,7 +5,7 @@ import { LanguageService } from './language.service';
   selector: 'app-footer',
   standalone: true,
   template: `
-  <footer class="absolute bottom-6 left-0 text-center w-full select-none">
+  <footer class="absolute bottom-6 left-0 text-center w-full">
     <p class="font-light tracking-widest uppercase flex items-center justify-center gap-2 flex-wrap transition-all duration-300"
        [class.text-slate-100]="uiMode() === 'enhanced'" [class.text-[13px]]="uiMode() === 'enhanced'" [class.font-medium]="uiMode() === 'enhanced'"
        [class.text-slate-400]="uiMode() !== 'enhanced'" [class.text-[10px]]="uiMode() !== 'enhanced'">
@@ -23,7 +23,7 @@ import { LanguageService } from './language.service';
          [class.font-bold]="uiMode() === 'enhanced'">contact@wpsila.com</a>
       <span>&bull;</span>
       <button (click)="openGuide.emit()" class="hover:text-slate-200 transition-colors font-medium text-slate-300 underline decoration-slate-500 underline-offset-4 uppercase cursor-pointer"
-              [class.font-bold]="uiMode() === 'enhanced'">{{ lang.translations().GUIDE_PRIVACY_TITLE }}</button>
+              [class.font-bold]="uiMode() === 'enhanced'">{{ lang.translations().GUIDE_FOOTER_TITLE }}</button>
     </p>
   </footer>
   `

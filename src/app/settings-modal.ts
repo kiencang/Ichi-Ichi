@@ -25,7 +25,7 @@ import { LanguageService } from './language.service';
               </mat-icon>
               {{ lang.translations().SETTINGS_TITLE }}
             </h2>
-            <button (click)="show.set(false)" class="text-slate-400 hover:text-white transition-colors p-1.5 rounded-lg hover:bg-slate-800 cursor-pointer flex items-center justify-center"
+            <button (click)="show.set(false)" class="text-slate-400 hover:text-white transition-colors p-1.5 rounded-full hover:bg-slate-800 cursor-pointer flex items-center justify-center"
                     [class.scale-110]="tempUiMode() === 'enhanced'">
               <mat-icon class="!text-[20px] !w-[20px] !h-[20px]">close</mat-icon>
             </button>

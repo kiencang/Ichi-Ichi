@@ -17,7 +17,6 @@ import { LanguageService } from './language.service';
             <h2 class="text-slate-200 font-medium flex flex-wrap items-center gap-2"
                 [class.text-xl]="uiMode() === 'enhanced'" [class.font-bold]="uiMode() === 'enhanced'"
                 [class.text-lg]="uiMode() !== 'enhanced'">
-              <mat-icon class="w-5 h-5 text-slate-400 shrink-0">help_outline</mat-icon>
               <span>{{ lang.translations().USER_GUIDE }} 
                 <span class="font-normal inline-block ml-1 text-left"
                       [class.text-base]="uiMode() === 'enhanced'" [class.text-slate-300]="uiMode() === 'enhanced'" [class.font-semibold]="uiMode() === 'enhanced'"
@@ -26,7 +25,7 @@ import { LanguageService } from './language.service';
                 </span>
               </span>
             </h2>
-            <button (click)="show.set(false)" class="text-slate-500 hover:text-slate-300 transition-colors p-1.5 rounded-lg hover:bg-slate-800 cursor-pointer flex items-center justify-center"
+            <button (click)="show.set(false)" class="text-slate-500 hover:text-slate-300 transition-colors p-1.5 rounded-full hover:bg-slate-800 cursor-pointer flex items-center justify-center"
                     [class.scale-110]="uiMode() === 'enhanced'">
               <mat-icon class="!text-[20px] !w-[20px] !h-[20px]">close</mat-icon>
             </button>
