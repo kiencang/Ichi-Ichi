@@ -5,7 +5,7 @@ import { LanguageService } from './language.service';
   selector: 'app-footer',
   standalone: true,
   template: `
-  <footer class="absolute bottom-6 left-0 text-center w-full">
+  <footer class="absolute bottom-6 left-0 text-center w-full px-4">
     <p class="font-light tracking-widest uppercase flex items-center justify-center gap-2 flex-wrap transition-all duration-300"
        [class.text-slate-100]="uiMode() === 'enhanced'" [class.text-[13px]]="uiMode() === 'enhanced'" [class.font-medium]="uiMode() === 'enhanced'"
        [class.text-slate-400]="uiMode() !== 'enhanced'" [class.text-[10px]]="uiMode() !== 'enhanced'">

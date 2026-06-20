@@ -43,7 +43,7 @@ import { LanguageService } from './language.service';
       @if (!isRecording()) {
         <svg viewBox="0 0 100 100" class="absolute inset-0 w-full h-full pointer-events-none z-20 opacity-50 mix-blend-overlay drop-shadow-[0_1px_1px_rgba(0,0,0,0.9)] transition-all duration-300 transform group-hover:rotate-12 group-hover:opacity-70">
           <path id="bezel-path" d="M 50,50 m -37,0 a 37,37 0 1,1 74,0 a 37,37 0 1,1 -74,0" fill="none" />
-          <text font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace" font-size="4.5" font-weight="600" fill="#ffffff" letter-spacing="0.25em" class="uppercase">
+          <text font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace" font-size="4.5" font-weight="600" fill="#ffffff" letter-spacing="0.25em" class="uppercase font-mono">
             <textPath href="#bezel-path" startOffset="10%" text-anchor="middle">ICHI ICHI</textPath>
           </text>
         </svg>
