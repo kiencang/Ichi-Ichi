@@ -65,6 +65,10 @@ export class App implements OnDestroy, OnInit {
   tempUiMode = this.settingsService.tempUiMode;
   fpsPreset = this.settingsService.fpsPreset;
   tempFpsPreset = this.settingsService.tempFpsPreset;
+  showBorder = this.settingsService.showBorder;
+  tempShowBorder = this.settingsService.tempShowBorder;
+  borderColor = this.settingsService.borderColor;
+  tempBorderColor = this.settingsService.tempBorderColor;
   showSettingsModal = signal(false);
 
   hasMicDevice = this.deviceDetector.hasMicDevice;
@@ -221,7 +225,9 @@ export class App implements OnDestroy, OnInit {
         qualityPreset: this.qualityPreset(),
         fpsPreset: this.fpsPreset(),
         cachedWindowWidth: this.cachedWindowWidth,
-        cachedWindowHeight: this.cachedWindowHeight
+        cachedWindowHeight: this.cachedWindowHeight,
+        showBorder: this.showBorder(),
+        borderColor: this.borderColor()
     });
   }
 

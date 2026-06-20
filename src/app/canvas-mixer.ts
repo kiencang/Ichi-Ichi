@@ -6,6 +6,8 @@ export interface CameraOverlayConfig {
   cameraSize: number;
   windowWidth: number;
   windowHeight: number;
+  showBorder?: boolean;
+  borderColor?: string;
 }
 
 export class CanvasMixer {
@@ -98,14 +100,16 @@ export class CanvasMixer {
 
         canvasCtx.restore();
 
-        // Stroke rounded circle boundary
-        canvasCtx.save();
-        canvasCtx.beginPath();
-        canvasCtx.arc(x + camRadius, y + camRadius, camRadius, 0, Math.PI * 2);
-        canvasCtx.lineWidth = 2 * scale;
-        canvasCtx.strokeStyle = 'rgba(16, 185, 129, 0.8)';
-        canvasCtx.stroke();
-        canvasCtx.restore();
+        // Stroke rounded circle boundary (only if showBorder is enabled)
+        if (config.showBorder) {
+          canvasCtx.save();
+          canvasCtx.beginPath();
+          canvasCtx.arc(x + camRadius, y + camRadius, camRadius, 0, Math.PI * 2);
+          canvasCtx.lineWidth = 2 * scale;
+          canvasCtx.strokeStyle = config.borderColor || 'rgba(16, 185, 129, 0.8)';
+          canvasCtx.stroke();
+          canvasCtx.restore();
+        }
       }
     } catch {
       // Guard silently during stream transitions

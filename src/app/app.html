@@ -113,19 +113,21 @@
     [(tempCameraSize)]="tempCameraSize"
     [(tempUiMode)]="tempUiMode"
     [(tempFpsPreset)]="tempFpsPreset"
+    [(tempShowBorder)]="tempShowBorder"
+    [(tempBorderColor)]="tempBorderColor"
     (saveSettings)="saveSettings()"
     (resetSettings)="resetToDefaultSettings()"
   ></app-settings-modal>
 
   @if (isCameraEnabled() && cameraStream()) {
     <div 
-      class="fixed z-[100] rounded-full overflow-hidden shadow-2xl border-2 bg-slate-900 flex items-center justify-center select-none group"
+      class="fixed z-[100] rounded-full overflow-hidden shadow-2xl bg-slate-900 flex items-center justify-center select-none group"
        [class.transition-all]="!isDraggingCam()"
        [class.duration-300]="!isDraggingCam()"
        [class.transition-opacity]="isDraggingCam()"
        [class.transition-shadow]="isDraggingCam()"
-       [class.border-emerald-500/80]="uiMode() !== 'enhanced'"
-       [class.border-amber-500]="uiMode() === 'enhanced'"
+       [class.border-2]="showSettingsModal() ? tempShowBorder() : showBorder()"
+       [style.borderColor]="showSettingsModal() ? tempBorderColor() : borderColor()"
        [class.opacity-0]="isRecording()"
        [class.pointer-events-none]="isRecording()"
        [class.cursor-move]="!isRecording() && !isCountingDown()"

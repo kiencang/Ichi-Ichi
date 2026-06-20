@@ -9,11 +9,15 @@ export class SettingsService {
   cameraSize = signal<number>(APP_CONFIG.DEFAULTS.CAMERA_SIZE);
   uiMode = signal<'default' | 'enhanced'>(APP_CONFIG.DEFAULTS.UI_MODE);
   fpsPreset = signal<30 | 60>(APP_CONFIG.DEFAULTS.FPS_PRESET);
+  showBorder = signal<boolean>(APP_CONFIG.DEFAULTS.SHOW_BORDER);
+  borderColor = signal<string>(APP_CONFIG.DEFAULTS.BORDER_COLOR_DEFAULT);
 
   tempQualityPreset = signal<'high' | 'medium' | 'low'>(APP_CONFIG.DEFAULTS.QUALITY_PRESET);
   tempCameraSize = signal<number>(APP_CONFIG.DEFAULTS.CAMERA_SIZE);
   tempUiMode = signal<'default' | 'enhanced'>(APP_CONFIG.DEFAULTS.UI_MODE);
   tempFpsPreset = signal<30 | 60>(APP_CONFIG.DEFAULTS.FPS_PRESET);
+  tempShowBorder = signal<boolean>(APP_CONFIG.DEFAULTS.SHOW_BORDER);
+  tempBorderColor = signal<string>(APP_CONFIG.DEFAULTS.BORDER_COLOR_DEFAULT);
 
   constructor() {
     this.loadSettings();
@@ -45,6 +49,22 @@ export class SettingsService {
         this.fpsPreset.set(fpsNum);
         this.tempFpsPreset.set(fpsNum);
       }
+
+      const storedShowBorder = localStorage.getItem(APP_CONFIG.LOCAL_STORAGE_KEYS.SHOW_BORDER);
+      if (storedShowBorder !== null) {
+        const isShown = storedShowBorder === 'true';
+        this.showBorder.set(isShown);
+        this.tempShowBorder.set(isShown);
+      }
+
+      const storedColor = localStorage.getItem(APP_CONFIG.LOCAL_STORAGE_KEYS.BORDER_COLOR);
+      if (storedColor) {
+        this.borderColor.set(storedColor);
+        this.tempBorderColor.set(storedColor);
+      } else {
+        this.borderColor.set(APP_CONFIG.DEFAULTS.BORDER_COLOR_DEFAULT);
+        this.tempBorderColor.set(APP_CONFIG.DEFAULTS.BORDER_COLOR_DEFAULT);
+      }
     }
   }
 
@@ -53,17 +73,23 @@ export class SettingsService {
     const newSize = this.tempCameraSize();
     const newMode = this.tempUiMode();
     const newFps = this.tempFpsPreset();
+    const newShowBorder = this.tempShowBorder();
+    const newBorderColor = this.tempBorderColor();
 
     this.qualityPreset.set(newQuality);
     this.cameraSize.set(newSize);
     this.uiMode.set(newMode);
     this.fpsPreset.set(newFps);
+    this.showBorder.set(newShowBorder);
+    this.borderColor.set(newBorderColor);
 
     if (typeof window !== 'undefined') {
       localStorage.setItem(APP_CONFIG.LOCAL_STORAGE_KEYS.QUALITY_PRESET, newQuality);
       localStorage.setItem(APP_CONFIG.LOCAL_STORAGE_KEYS.CAMERA_SIZE, newSize.toString());
       localStorage.setItem(APP_CONFIG.LOCAL_STORAGE_KEYS.UI_MODE, newMode);
       localStorage.setItem(APP_CONFIG.LOCAL_STORAGE_KEYS.FPS_PRESET, newFps.toString());
+      localStorage.setItem(APP_CONFIG.LOCAL_STORAGE_KEYS.SHOW_BORDER, newShowBorder.toString());
+      localStorage.setItem(APP_CONFIG.LOCAL_STORAGE_KEYS.BORDER_COLOR, newBorderColor);
     }
   }
 
@@ -72,17 +98,23 @@ export class SettingsService {
     this.cameraSize.set(APP_CONFIG.DEFAULTS.CAMERA_SIZE);
     this.uiMode.set(APP_CONFIG.DEFAULTS.UI_MODE);
     this.fpsPreset.set(APP_CONFIG.DEFAULTS.FPS_PRESET);
+    this.showBorder.set(APP_CONFIG.DEFAULTS.SHOW_BORDER);
+    this.borderColor.set(APP_CONFIG.DEFAULTS.BORDER_COLOR_DEFAULT);
     
     this.tempQualityPreset.set(APP_CONFIG.DEFAULTS.QUALITY_PRESET);
     this.tempCameraSize.set(APP_CONFIG.DEFAULTS.CAMERA_SIZE);
     this.tempUiMode.set(APP_CONFIG.DEFAULTS.UI_MODE);
     this.tempFpsPreset.set(APP_CONFIG.DEFAULTS.FPS_PRESET);
+    this.tempShowBorder.set(APP_CONFIG.DEFAULTS.SHOW_BORDER);
+    this.tempBorderColor.set(APP_CONFIG.DEFAULTS.BORDER_COLOR_DEFAULT);
 
     if (typeof window !== 'undefined') {
       localStorage.removeItem(APP_CONFIG.LOCAL_STORAGE_KEYS.QUALITY_PRESET);
       localStorage.removeItem(APP_CONFIG.LOCAL_STORAGE_KEYS.CAMERA_SIZE);
       localStorage.removeItem(APP_CONFIG.LOCAL_STORAGE_KEYS.UI_MODE);
       localStorage.removeItem(APP_CONFIG.LOCAL_STORAGE_KEYS.FPS_PRESET);
+      localStorage.removeItem(APP_CONFIG.LOCAL_STORAGE_KEYS.SHOW_BORDER);
+      localStorage.removeItem(APP_CONFIG.LOCAL_STORAGE_KEYS.BORDER_COLOR);
     }
   }
 
@@ -91,5 +123,7 @@ export class SettingsService {
     this.tempCameraSize.set(this.cameraSize());
     this.tempUiMode.set(this.uiMode());
     this.tempFpsPreset.set(this.fpsPreset());
+    this.tempShowBorder.set(this.showBorder());
+    this.tempBorderColor.set(this.borderColor());
   }
 }

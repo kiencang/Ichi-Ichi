@@ -14,6 +14,8 @@ export interface RecordConfig {
   fpsPreset?: number;
   cachedWindowWidth: number;
   cachedWindowHeight: number;
+  showBorder: boolean;
+  borderColor: string;
 }
 
 @Injectable({
@@ -169,7 +171,9 @@ export class RecordingService {
                   cameraPos: config.cameraPos,
                   cameraSize: config.cameraSize,
                   windowWidth: config.cachedWindowWidth,
-                  windowHeight: config.cachedWindowHeight
+                  windowHeight: config.cachedWindowHeight,
+                  showBorder: config.showBorder,
+                  borderColor: config.borderColor
               });
               isDrawingFrame = false;
           };

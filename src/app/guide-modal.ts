@@ -7,8 +7,8 @@ import { MatIconModule } from '@angular/material/icon';
   imports: [MatIconModule],
   template: `
     @if (show()) {
-      <div class="fixed inset-0 z-[110] flex items-center justify-center bg-[#070b14]/85 backdrop-blur-sm transition-all p-4">
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl w-full max-w-[716px] overflow-hidden flex flex-col max-h-[90vh]"
+      <div (click)="$event.target === $event.currentTarget && show.set(false)" class="fixed inset-0 z-[110] flex items-center justify-center bg-[#070b14]/85 backdrop-blur-sm transition-all p-4 cursor-pointer">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl w-full max-w-[716px] overflow-hidden flex flex-col max-h-[90vh] cursor-default"
              [class.max-w-[760px]]="uiMode() === 'enhanced'">
           
           <!-- Header -->
