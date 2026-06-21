@@ -23,6 +23,9 @@ Dùng luôn qua trình duyệt, không phải cài thêm phần mềm hoặc add
 - **Bảo mật quyền riêng tư:** Dữ liệu xử lý hoàn toàn phía máy khách (client-side), không gửi dữ liệu ra server bên ngoài;
 - **Mã nguồn mở:** Mã nguồn GitHub công khai, mọi người có thể lấy về điều chỉnh thêm & tự host trên một địa chỉ khác nếu muốn (ví dụ trên Cloudflare Workers & Pages). Nếu đơn giản chỉ cần dùng ngay ứng dụng thì bạn vào link trên.
 
+### Tuyên bố từ chối trách nhiệm
+Ichi Ichi cũng như người phát triển nó không đưa ra bất kỳ bảo đảm rõ ràng hay ngụ ý nào, cũng như không tuyên bố rằng công cụ sẽ vận hành hoàn hảo, chính xác hoặc cập nhật. Người phát triển sẽ không chịu trách nhiệm cho bất kỳ tổn thất hay thiệt hại nào phát sinh trực tiếp hoặc gián tiếp liên quan đến hoặc phát sinh từ việc sử dụng công cụ này.
+
 ---
 
 <a name="english"></a>
@@ -43,3 +46,6 @@ Use it directly in your browser without installing any extra software or add-ons
 - **Compatibility note:** On other browsers (e.g., Firefox) or other operating systems (e.g., macOS), full functionality may not be supported, or additional settings may be required for the screen recording to work smoothly;
 - **Privacy-focused:** Data is processed entirely client-side, with no data ever sent to external servers;
 - **Open source:** Public GitHub repository available for anyone to clone, modify, and self-host on a different domain if desired (e.g., on Cloudflare Workers & Pages). If you simply want to use the application right away, just visit the link provided above;
+
+### Disclaimer
+Neither Ichi Ichi nor its developer makes any warranties, express or implied, or guarantees that the tool will operate flawlessly, accurately, or remain up to date. The developer shall not be held liable for any loss or damage arising directly or indirectly in connection with or resulting from the use of this tool.
